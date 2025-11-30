@@ -16,6 +16,9 @@ declare module 'tronweb' {
     };
     fromSun(sun: string): string;
     toSun(trx: string): string;
+    contract(): {
+      at(address: string): Promise<any>;
+    };
     transactionBuilder: {
       sendTrx(to: string, amount: string, from: string): Promise<any>;
     };

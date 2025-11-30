@@ -9,8 +9,9 @@ async function getTronWeb() {
   }
   return TronWeb;
 }
-import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
+import { mnemonicToSeedSync } from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
+import { ethers } from 'ethers';
 
 export interface TronWallet {
   address: string;
@@ -27,8 +28,9 @@ const TRON_NETWORK = {
 const TRON_DERIVATION_PATH = "m/44'/195'/0'/0/";
 
 export async function createTronWallet(): Promise<TronWallet> {
-  // @ts-expect-error - generateMnemonic works without args but TypeScript strict mode requires wordlist
-  const mnemonic: string = generateMnemonic();
+  // Use ethers to generate mnemonic (works reliably)
+  const wallet = ethers.Wallet.createRandom();
+  const mnemonic = wallet.mnemonic?.phrase || '';
   return createTronWalletFromMnemonic(mnemonic);
 }
 

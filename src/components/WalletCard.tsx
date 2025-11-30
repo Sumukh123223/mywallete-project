@@ -91,6 +91,19 @@ function WalletCard({ wallet, balance, onDelete, onRefresh, loadingBalance }: Wa
         )}
       </div>
 
+      {/* Token Balances */}
+      {balance?.tokens && balance.tokens.length > 0 && (
+        <div className="token-balances">
+          <div className="token-balances-label">Token Balances:</div>
+          {balance.tokens.map((token, index) => (
+            <div key={index} className="token-balance-item">
+              <span className="token-symbol">{token.symbol}</span>
+              <span className="token-amount">{formatBalance(token.balance)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="wallet-address">
         <div className="address-label">Address</div>
         <div className="address-value">

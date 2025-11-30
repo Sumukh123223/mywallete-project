@@ -12,6 +12,14 @@ export interface WalletBalance {
   balance: string;
   symbol: string;
   usdValue?: number;
+  tokens?: TokenBalance[];
+}
+
+export interface TokenBalance {
+  symbol: string;
+  balance: string;
+  contractAddress: string;
+  decimals: number;
 }
 
 export interface Transaction {

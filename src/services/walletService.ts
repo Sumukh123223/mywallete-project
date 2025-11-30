@@ -2,6 +2,7 @@ import { Wallet, WalletBalance } from '../types/wallet';
 import { encrypt, decrypt } from '../utils/encryption';
 import { createTronWallet, createTronWalletFromMnemonic, getTronBalance } from './tronWallet';
 import { createBnbWallet, createBnbWalletFromMnemonic, getBnbBalance } from './bnbWallet';
+import { getAllTokenBalances } from './tokenBalances';
 
 export class WalletService {
   static async createWallet(
@@ -39,15 +40,36 @@ export class WalletService {
 
   static async getBalance(wallet: Wallet): Promise<WalletBalance> {
     let balance = '0';
+    let symbol = 'UNKNOWN';
     
     try {
       switch (wallet.type) {
         case 'tron':
           balance = await getTronBalance(wallet.address);
-          return { address: wallet.address, balance, symbol: 'TRX' };
+          symbol = 'TRX';
+          
+          // Get token balances (TRC20 USDT)
+          const tronTokens = await getAllTokenBalances(wallet.address, 'tron');
+          return { 
+            address: wallet.address, 
+            balance, 
+            symbol,
+            tokens: tronTokens
+          };
+          
         case 'bnb':
           balance = await getBnbBalance(wallet.address);
-          return { address: wallet.address, balance, symbol: 'BNB' };
+          symbol = 'BNB';
+          
+          // Get token balances (BEP20 USDT)
+          const bnbTokens = await getAllTokenBalances(wallet.address, 'bnb');
+          return { 
+            address: wallet.address, 
+            balance, 
+            symbol,
+            tokens: bnbTokens
+          };
+          
         default:
           return { address: wallet.address, balance: '0', symbol: 'UNKNOWN' };
       }
