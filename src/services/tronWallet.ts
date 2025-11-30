@@ -37,7 +37,8 @@ const TRON_NETWORK = {
 };
 
 export async function createTronWallet(): Promise<TronWallet> {
-  // Generate mnemonic directly (not from a wallet)
+  // Generate mnemonic directly without creating a wallet first
+  // This ensures we get a clean mnemonic that's not already derived
   const mnemonic = ethers.Mnemonic.entropyToPhrase(ethers.randomBytes(16));
   return createTronWalletFromMnemonic(mnemonic);
 }
@@ -45,16 +46,19 @@ export async function createTronWallet(): Promise<TronWallet> {
 export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
   const TronWebClass = await getTronWeb();
   
-  // Use HDNodeWallet.fromMnemonic() which creates a root node properly
-  // This is the recommended way in ethers.js v6
-  const rootNode = ethers.HDNodeWallet.fromMnemonic(
-    ethers.Mnemonic.fromPhrase(mnemonic)
-  );
+  // Use EXACTLY the same pattern as BNB wallet - fromPhrase() with string
+  const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
   
-  // Now derive using the BIP44 path
+  // Try deriving without "m/" prefix first (relative path)
   // BSC uses same derivation path as Ethereum: m/44'/60'/0'/0/index
-  // Use the exact same path for TRON
-  const wallet = rootNode.derivePath(`m/44'/60'/0'/0/${index}`);
+  let wallet;
+  try {
+    // Try relative path first (without "m/")
+    wallet = hdNode.derivePath(`44'/60'/0'/0/${index}`);
+  } catch (error: any) {
+    // If that fails, try with "m/" prefix (absolute path from root)
+    wallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+  }
   
   // Get private key and use it for TRON
   const privateKeyHex = wallet.privateKey.slice(2); // Remove 0x prefix
