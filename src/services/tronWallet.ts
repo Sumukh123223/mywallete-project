@@ -9,8 +9,6 @@ async function getTronWeb() {
   }
   return TronWeb;
 }
-import { mnemonicToSeedSync } from '@scure/bip39';
-import { HDKey } from '@scure/bip32';
 import { ethers } from 'ethers';
 
 export interface TronWallet {
@@ -24,9 +22,6 @@ const TRON_NETWORK = {
   // Alternative: 'https://api.shasta.trongrid.io' for testnet
 };
 
-// TRON uses BIP44 path: m/44'/195'/0'/0/index
-const TRON_DERIVATION_PATH = "m/44'/195'/0'/0/";
-
 export async function createTronWallet(): Promise<TronWallet> {
   // Use ethers to generate mnemonic (works reliably)
   const wallet = ethers.Wallet.createRandom();
@@ -36,19 +31,16 @@ export async function createTronWallet(): Promise<TronWallet> {
 
 export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
   const TronWebClass = await getTronWeb();
-  const seed = mnemonicToSeedSync(mnemonic);
-  const hdKey = HDKey.fromMasterSeed(seed);
   
-  // Derive TRON path: m/44'/195'/0'/0/index
-  const path = `${TRON_DERIVATION_PATH}${index}`;
-  const child = hdKey.derive(path);
+  // Use ethers to derive from mnemonic (same as BNB, works reliably)
+  const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
   
-  if (!child.privateKey) {
-    throw new Error('Failed to derive private key');
-  }
-
-  // Convert private key to hex string
-  const privateKeyHex = Buffer.from(child.privateKey).toString('hex');
+  // TRON uses derivation path: m/44'/195'/0'/0/index
+  // But we can derive from Ethereum path and convert the private key
+  const ethWallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+  
+  // Get private key and use it for TRON
+  const privateKeyHex = ethWallet.privateKey.slice(2); // Remove 0x prefix
   
   // Create TronWeb instance and generate address
   const tronWeb = new TronWebClass({
