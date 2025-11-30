@@ -37,10 +37,13 @@ export interface TokenBalance {
  */
 export async function getTRC20USDTBalance(address: string): Promise<string> {
   try {
-    // Dynamic import to avoid issues
-    const tronWebModule = await import('tronweb');
-    const TronWeb = tronWebModule.default || tronWebModule;
+    // Get TronWeb from window (loaded via CDN)
+    if (typeof window === 'undefined' || !(window as any).TronWeb) {
+      console.error('TronWeb not available');
+      return '0';
+    }
     
+    const TronWeb = (window as any).TronWeb;
     const tronWeb = new TronWeb({
       fullHost: 'https://api.trongrid.io',
     });

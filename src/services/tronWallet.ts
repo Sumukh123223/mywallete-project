@@ -1,13 +1,27 @@
-// Dynamic import for TronWeb to avoid Vite optimization issues
+// Load TronWeb from window or import
 let TronWeb: any;
 
-// Load TronWeb dynamically
 async function getTronWeb() {
-  if (!TronWeb) {
-    const tronWebModule = await import('tronweb');
-    TronWeb = tronWebModule.default || tronWebModule;
+  if (TronWeb) return TronWeb;
+  
+  // Get from window (loaded via CDN script tag)
+  if (typeof window !== 'undefined') {
+    const windowTronWeb = (window as any).TronWeb;
+    if (windowTronWeb) {
+      TronWeb = windowTronWeb;
+      return TronWeb;
+    }
   }
-  return TronWeb;
+  
+  // Wait a bit and retry (in case script is still loading)
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  if (typeof window !== 'undefined' && (window as any).TronWeb) {
+    TronWeb = (window as any).TronWeb;
+    return TronWeb;
+  }
+  
+  throw new Error('TronWeb library not loaded. Please refresh the page.');
 }
 import { ethers } from 'ethers';
 

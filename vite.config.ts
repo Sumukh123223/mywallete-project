@@ -7,15 +7,8 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-  resolve: {
-    alias: {
-      // Fix module resolution for @noble packages
-      '@noble/hashes/sha3': '@noble/hashes/sha3',
-      '@noble/hashes': '@noble/hashes',
-    },
-  },
   optimizeDeps: {
-    include: ['@noble/hashes', '@noble/hashes/sha3'],
+    exclude: ['tronweb'], // Load from CDN instead
   },
 })
 
