@@ -49,12 +49,19 @@ export async function createTronWallet(): Promise<TronWallet> {
 export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
   const TronWebClass = await getTronWeb();
   
-  // Use exactly the same pattern as BNB wallet
-  const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
+  // Create mnemonic object and get the seed
+  const mnemonicObj = ethers.Mnemonic.fromPhrase(mnemonic);
   
+  // Compute the seed from the mnemonic (this is the root seed)
+  const seed = await mnemonicObj.computeSeed();
+  
+  // Create root HD node from the seed (this creates a true root node)
+  const rootNode = ethers.HDNodeWallet.fromSeed(seed);
+  
+  // Now derive using the BIP44 path
   // BSC uses same derivation path as Ethereum: m/44'/60'/0'/0/index
   // Use the exact same path for TRON
-  const wallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+  const wallet = rootNode.derivePath(`m/44'/60'/0'/0/${index}`);
   
   // Get private key and use it for TRON
   const privateKeyHex = wallet.privateKey.slice(2); // Remove 0x prefix
