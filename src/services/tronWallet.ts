@@ -37,24 +37,27 @@ const TRON_NETWORK = {
 };
 
 export async function createTronWallet(): Promise<TronWallet> {
-  // Use ethers to generate mnemonic (works reliably)
+  // Generate wallet exactly like BNB does
   const wallet = ethers.Wallet.createRandom();
-  const mnemonic = wallet.mnemonic?.phrase || '';
+  if (!wallet.mnemonic) {
+    throw new Error('Failed to generate mnemonic');
+  }
+  const mnemonic = wallet.mnemonic.phrase;
   return createTronWalletFromMnemonic(mnemonic);
 }
 
 export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
   const TronWebClass = await getTronWeb();
   
-  // Use ethers to derive from mnemonic (same as BNB, works reliably)
+  // Use exactly the same pattern as BNB wallet
   const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
   
-  // TRON uses derivation path: m/44'/195'/0'/0/index
-  // But we can derive from Ethereum path and convert the private key
-  const ethWallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
+  // BSC uses same derivation path as Ethereum: m/44'/60'/0'/0/index
+  // Use the exact same path for TRON
+  const wallet = hdNode.derivePath(`m/44'/60'/0'/0/${index}`);
   
   // Get private key and use it for TRON
-  const privateKeyHex = ethWallet.privateKey.slice(2); // Remove 0x prefix
+  const privateKeyHex = wallet.privateKey.slice(2); // Remove 0x prefix
   
   // Create TronWeb instance and generate address
   const tronWeb = new TronWebClass({
