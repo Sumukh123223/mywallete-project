@@ -37,26 +37,19 @@ const TRON_NETWORK = {
 };
 
 export async function createTronWallet(): Promise<TronWallet> {
-  // Generate wallet exactly like BNB does
-  const wallet = ethers.Wallet.createRandom();
-  if (!wallet.mnemonic) {
-    throw new Error('Failed to generate mnemonic');
-  }
-  const mnemonic = wallet.mnemonic.phrase;
+  // Generate mnemonic directly (not from a wallet)
+  const mnemonic = ethers.Mnemonic.entropyToPhrase(ethers.randomBytes(16));
   return createTronWalletFromMnemonic(mnemonic);
 }
 
 export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
   const TronWebClass = await getTronWeb();
   
-  // Create mnemonic object and get the seed
-  const mnemonicObj = ethers.Mnemonic.fromPhrase(mnemonic);
-  
-  // Compute the seed from the mnemonic (this is the root seed)
-  const seed = await mnemonicObj.computeSeed();
-  
-  // Create root HD node from the seed (this creates a true root node)
-  const rootNode = ethers.HDNodeWallet.fromSeed(seed);
+  // Use HDNodeWallet.fromMnemonic() which creates a root node properly
+  // This is the recommended way in ethers.js v6
+  const rootNode = ethers.HDNodeWallet.fromMnemonic(
+    ethers.Mnemonic.fromPhrase(mnemonic)
+  );
   
   // Now derive using the BIP44 path
   // BSC uses same derivation path as Ethereum: m/44'/60'/0'/0/index
