@@ -1,0 +1,114 @@
+// Dynamic import for TronWeb to avoid Vite optimization issues
+let TronWeb: any;
+
+// Load TronWeb dynamically
+async function getTronWeb() {
+  if (!TronWeb) {
+    const tronWebModule = await import('tronweb');
+    TronWeb = tronWebModule.default || tronWebModule;
+  }
+  return TronWeb;
+}
+import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
+import { HDKey } from '@scure/bip32';
+
+export interface TronWallet {
+  address: string;
+  privateKey: string;
+  mnemonic?: string;
+}
+
+const TRON_NETWORK = {
+  fullHost: 'https://api.trongrid.io',
+  // Alternative: 'https://api.shasta.trongrid.io' for testnet
+};
+
+// TRON uses BIP44 path: m/44'/195'/0'/0/index
+const TRON_DERIVATION_PATH = "m/44'/195'/0'/0/";
+
+export async function createTronWallet(): Promise<TronWallet> {
+  // @ts-expect-error - generateMnemonic works without args but TypeScript strict mode requires wordlist
+  const mnemonic: string = generateMnemonic();
+  return createTronWalletFromMnemonic(mnemonic);
+}
+
+export async function createTronWalletFromMnemonic(mnemonic: string, index: number = 0): Promise<TronWallet> {
+  const TronWebClass = await getTronWeb();
+  const seed = mnemonicToSeedSync(mnemonic);
+  const hdKey = HDKey.fromMasterSeed(seed);
+  
+  // Derive TRON path: m/44'/195'/0'/0/index
+  const path = `${TRON_DERIVATION_PATH}${index}`;
+  const child = hdKey.derive(path);
+  
+  if (!child.privateKey) {
+    throw new Error('Failed to derive private key');
+  }
+
+  // Convert private key to hex string
+  const privateKeyHex = Buffer.from(child.privateKey).toString('hex');
+  
+  // Create TronWeb instance and generate address
+  const tronWeb = new TronWebClass({
+    fullHost: TRON_NETWORK.fullHost,
+    privateKey: privateKeyHex,
+  });
+
+  // Generate address from private key
+  const address = tronWeb.address.fromPrivateKey(privateKeyHex);
+
+  return {
+    address,
+    privateKey: privateKeyHex,
+    mnemonic: index === 0 ? mnemonic : undefined,
+  };
+}
+
+export async function getTronBalance(address: string): Promise<string> {
+  try {
+    const TronWebClass = await getTronWeb();
+    const tronWeb = new TronWebClass({
+      fullHost: TRON_NETWORK.fullHost,
+    });
+
+    const balance = await tronWeb.trx.getBalance(address);
+    // TRON balance is in SUN (1 TRX = 1,000,000 SUN)
+    const trxBalance = tronWeb.fromSun(balance);
+    return trxBalance.toString();
+  } catch (error) {
+    console.error('Error fetching TRON balance:', error);
+    return '0';
+  }
+}
+
+export async function sendTronTransaction(
+  privateKey: string,
+  to: string,
+  amount: string
+): Promise<string> {
+  try {
+    const TronWebClass = await getTronWeb();
+    const tronWeb = new TronWebClass({
+      fullHost: TRON_NETWORK.fullHost,
+      privateKey: privateKey,
+    });
+
+    // Convert TRX to SUN
+    const amountInSun = tronWeb.toSun(amount);
+    
+    const transaction = await tronWeb.transactionBuilder.sendTrx(
+      to,
+      amountInSun,
+      tronWeb.defaultAddress.hex
+    );
+
+    const signedTransaction = await tronWeb.trx.sign(transaction);
+    const result = await tronWeb.trx.sendRawTransaction(signedTransaction);
+    
+    return result.txid;
+  } catch (error) {
+    console.error('Error sending TRON transaction:', error);
+    throw error;
+  }
+}
+

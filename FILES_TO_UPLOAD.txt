@@ -1,0 +1,70 @@
+📤 FILES TO UPLOAD TO GITHUB
+=============================
+
+Upload ALL files listed below (use `git add .` - it will respect .gitignore)
+
+✅ REQUIRED FILES:
+
+Config Files:
+- package.json
+- package-lock.json
+- vite.config.ts
+- tsconfig.json
+- tsconfig.node.json
+- vercel.json
+- .eslintrc.cjs
+- .gitignore
+
+Root Files:
+- index.html
+- README.md
+- DEPLOYMENT.md
+- GIT_UPLOAD_GUIDE.md
+- QUICK_START.md
+
+Source Code (src/ folder):
+- src/main.tsx
+- src/App.tsx
+- src/App.css
+- src/index.css
+
+Components:
+- src/components/LoginScreen.tsx
+- src/components/LoginScreen.css
+- src/components/WalletDashboard.tsx
+- src/components/WalletDashboard.css
+- src/components/WalletCard.tsx
+- src/components/WalletCard.css
+- src/components/AddWalletModal.tsx
+- src/components/AddWalletModal.css
+
+Services:
+- src/services/tronWallet.ts
+- src/services/bnbWallet.ts
+- src/services/walletService.ts
+
+Types:
+- src/types/wallet.ts
+
+Utils:
+- src/utils/encryption.ts
+- src/utils/storage.ts
+
+=========================================
+❌ DO NOT UPLOAD (automatically excluded):
+- node_modules/ (too large)
+- dist/ (build folder)
+- .vite/ (cache)
+- *.log files
+- .DS_Store
+
+=========================================
+
+Quick Command:
+cd ~/Desktop/crypto-wallet
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/YOUR_USERNAME/crypto-wallet.git
+git push -u origin main
+
